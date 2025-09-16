@@ -9,18 +9,29 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.16.1",
+    "docx": "^9.5.1",
+    "html-to-docx": "^1.8.0",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.10.0",
+    "next": "14.2.15",
+    "openai": "^5.20.3",
+    "pdf-lib": "^1.17.1",
+    "prisma": "^6.16.1",
+    "puppeteer": "^24.21.0",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.15"
+    "sharp": "^0.34.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.15"
+    "typescript": "^5"
   }
 }
