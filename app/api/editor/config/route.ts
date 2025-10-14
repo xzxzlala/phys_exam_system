@@ -16,3 +16,6 @@ export async function GET(req: NextRequest) {
   const redirectUrl = `${ONLY.replace(/\/$/, '')}/editor?fileUrl=${encodeURIComponent(fileUrl)}`;
   return Response.redirect(redirectUrl, 302);
 }
+
+
+

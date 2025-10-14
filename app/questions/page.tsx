@@ -8,6 +8,7 @@ type Question = {
   contentHtml: string;
   answerHtml?: string | null;
   createdAt: string;
+  docxPath?: string | null;
 };
 
 export default function QuestionsPage() {
@@ -29,8 +30,12 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function isImageOnly(html: string): boolean {
+    const trimmed = html.replace(/\s+/g, '');
+    return /^<div>?<img[^>]+><\/div>$/.test(trimmed) || /^<img[^>]+>$/.test(trimmed);
+  }
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-6">
@@ -65,18 +70,28 @@ export default function QuestionsPage() {
         <div>加载中...</div>
       ) : (
         <ul className="space-y-6">
-          {items.map((q) => (
-            <li key={q.id} className="border rounded p-4">
-              <div className="text-sm text-gray-500 mb-2">#{q.id} · {q.type} · {q.difficulty}</div>
-              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.contentHtml }} />
-              {q.answerHtml && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-blue-600">查看解析</summary>
-                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.answerHtml }} />
-                </details>
-              )}
-            </li>
-          ))}
+          {items.map((q) => {
+            const onlyImg = !!q.docxPath ? false : isImageOnly(q.contentHtml || '');
+            return (
+              <li key={q.id} className="border rounded p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-500 mb-2">#{q.id} · {q.type} · {q.difficulty}</div>
+                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.contentHtml }} />
+                    {q.answerHtml && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-blue-600">查看解析</summary>
+                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.answerHtml }} />
+                      </details>
+                    )}
+                  </div>
+                  {q.docxPath && (
+                    <a href={`/editor/doc/${q.id}`} className="px-3 py-2 border rounded whitespace-nowrap">在线编辑</a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>

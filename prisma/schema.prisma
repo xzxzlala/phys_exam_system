@@ -36,7 +36,6 @@ model Question {
   contentHtml  String
   answerHtml   String?
   tags         Json?
-  docxPath     String?
 
   ExamQuestion ExamQuestion[]
 }

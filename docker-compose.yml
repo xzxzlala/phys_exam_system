@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # 浏览器访问的 Document Server 地址；本地默认指向 8080
+      NEXT_PUBLIC_ONLYOFFICE_URL: ${NEXT_PUBLIC_ONLYOFFICE_URL:-http://localhost:8080}
+      # 持久化 SQLite 到容器内 /data（挂载到 named volume）
+      DATABASE_URL: file:/data/dev.db
+    ports:
+      - "80:3000"
+    volumes:
+      - app-data:/data
+      # 持久化上传的图片/DOCX（避免容器重建丢失）
+      - ./public/uploads:/app/public/uploads
+    depends_on:
+      - documentserver
+    restart: unless-stopped
+
+  documentserver:
+    image: onlyoffice/documentserver
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  app-data:
+
+

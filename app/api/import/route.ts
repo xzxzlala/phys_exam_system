@@ -3,7 +3,7 @@ import mammoth from 'mammoth';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { prisma } from '@/app/lib/prisma';
-import { convertDocToDocx } from '@/app/lib/convertDoc';
+import { convertDocToDocx, convertDocxToHtmlWithLibreOffice } from '@/app/lib/convertDoc';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,15 +50,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '仅支持 .doc 或 .docx 文件' }, { status: 400 });
     }
 
-    const { value: html } = await mammoth.convertToHtml({ path: workDocxPath }, {
-      convertImage: mammoth.images.inline(async (element) => {
-        const imageBuffer = Buffer.from(await element.read('base64'), 'base64');
-        const name = `img-${Date.now()}-${Math.random().toString(36).slice(2)}.${element.contentType.split('/')[1] || 'png'}`;
-        const fp = path.join(uploadDir, name);
-        await fs.writeFile(fp, imageBuffer);
-        return { src: `/uploads/${name}` };
-      }),
-    });
+    // 优先尝试 LibreOffice HTML 导出，保真度更高
+    let html = '';
+    try {
+      const tmpOutDir = path.join(uploadDir, `lo-${Date.now()}`);
+      const { htmlPath, assetsDir } = await convertDocxToHtmlWithLibreOffice(workDocxPath, tmpOutDir);
+      let raw = await fs.readFile(htmlPath, 'utf8');
+      // 将导出的相对资源拷贝/移动到 public/uploads，并重写路径
+      if (assetsDir) {
+        const assetFiles = await fs.readdir(assetsDir);
+        for (const f of assetFiles) {
+          const from = path.join(assetsDir, f);
+          const toName = `lo-${Date.now()}-${Math.random().toString(36).slice(2)}-${f}`;
+          const to = path.join(uploadDir, toName);
+          await fs.copyFile(from, to);
+          raw = raw.replaceAll(new RegExp(`${f.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`, 'g'), `/uploads/${toName}`);
+        }
+      }
+      html = raw;
+    } catch {
+      // 回退到 mammoth（文本/表格较好，但形状可能丢）
+      const m = await mammoth.convertToHtml({ path: workDocxPath }, {
+        convertImage: (mammoth as any).images.inline(async (element: any) => {
+          const imageBuffer = Buffer.from(await element.read('base64'), 'base64');
+          const name = `img-${Date.now()}-${Math.random().toString(36).slice(2)}.${element.contentType.split('/')[1] || 'png'}`;
+          const fp = path.join(uploadDir, name);
+          await fs.writeFile(fp, imageBuffer);
+          return { src: `/uploads/${name}` };
+        }),
+      });
+      html = m.value;
+    }
 
     const answerHtml = (formData.get('answerHtml') as string) || undefined;
     const tags = (formData.get('tags') as string) ? JSON.parse(formData.get('tags') as string) : undefined;
