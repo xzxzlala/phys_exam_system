@@ -25,3 +25,82 @@ body {
     text-wrap: balance;
   }
 }
+
+/* TipTap 编辑器样式 */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p {
+  margin: 8px 0;
+}
+
+.ProseMirror h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 16px 0 8px 0;
+}
+
+.ProseMirror h2 {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 14px 0 8px 0;
+}
+
+.ProseMirror h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 12px 0 8px 0;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  margin: 8px 0;
+  padding-left: 30px;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  margin: 10px 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 题目预览中的图片样式 */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 4px 0;
+}
+
+/* 图片应该保持原始尺寸，除非超出容器 */
+.prose img {
+  object-fit: contain;
+  display: inline-block;
+}
+
+/* 如果图片有 width/height 属性，浏览器会自动应用，我们只需要确保不强制覆盖 */
+.prose img[width] {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose img[height] {
+  max-width: 100%;
+  width: auto;
+}
+
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}

@@ -3,7 +3,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import mammoth from 'mammoth';
 import { prisma } from '@/app/lib/prisma';
-import { convertDocToDocx } from '@/app/lib/convertDoc';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,25 +21,21 @@ export async function POST(req: NextRequest) {
     const difficulty = (form.get('difficulty') as string) || 'MEDIUM';
     const source = (form.get('source') as string) || undefined;
 
-    if (!(file instanceof File)) {
+    const fileObj = file as any;
+    if (!fileObj || typeof fileObj.arrayBuffer !== 'function') {
       return NextResponse.json({ error: '缺少文件' }, { status: 400 });
     }
 
     const uploadDir = await ensureUploadDir();
-    const name = (file as File).name?.toLowerCase?.() || `upload-${Date.now()}`;
-    const buf = Buffer.from(await (file as File).arrayBuffer());
+    const name = (fileObj.name || '').toLowerCase() || `upload-${Date.now()}`;
+    const buf = Buffer.from(await fileObj.arrayBuffer());
 
-    let docxPath: string;
-    if (name.endsWith('.doc')) {
-      const p = path.join(uploadDir, `upload-${Date.now()}.doc`);
-      await fs.writeFile(p, buf);
-      docxPath = await convertDocToDocx(p, uploadDir);
-    } else if (name.endsWith('.docx')) {
-      docxPath = path.join(uploadDir, `upload-${Date.now()}.docx`);
-      await fs.writeFile(docxPath, buf);
-    } else {
-      return NextResponse.json({ error: '仅支持 .doc/.docx' }, { status: 400 });
+    if (!name.endsWith('.docx')) {
+      return NextResponse.json({ error: '仅支持 .docx 文件' }, { status: 400 });
     }
+
+    const docxPath = path.join(uploadDir, `upload-${Date.now()}.docx`);
+    await fs.writeFile(docxPath, buf);
 
     const { value: html } = await mammoth.convertToHtml({ path: docxPath }, {
       // mammoth 类型定义缺少 images.inline，这里以 any 断言

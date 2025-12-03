@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const questionIds: number[] = body.questionIds || [];
     const withAnswers: boolean = Boolean(body.withAnswers);
-    const name: string = body.name || `试卷-${Date.now()}`;
+    const name: string = body.name || '考卷';
     if (!Array.isArray(questionIds) || questionIds.length === 0) {
       return NextResponse.json({ error: '缺少题目 ID 列表' }, { status: 400 });
     }

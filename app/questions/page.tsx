@@ -16,6 +16,7 @@ export default function QuestionsPage() {
   const [type, setType] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState<Record<number, boolean>>({});
 
   async function load() {
     setLoading(true);
@@ -35,6 +36,32 @@ export default function QuestionsPage() {
   function isImageOnly(html: string): boolean {
     const trimmed = html.replace(/\s+/g, '');
     return /^<div>?<img[^>]+><\/div>$/.test(trimmed) || /^<img[^>]+>$/.test(trimmed);
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm(`确定要删除题目 #${id} 吗？此操作无法撤销。`)) {
+      return;
+    }
+
+    setDeleting((prev) => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetch(`/api/questions/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || '删除失败');
+        return;
+      }
+
+      // 从列表中移除
+      setItems((prev) => prev.filter((q) => q.id !== id));
+    } catch (error) {
+      alert('删除失败，请重试');
+    } finally {
+      setDeleting((prev) => ({ ...prev, [id]: false }));
+    }
   }
 
   return (
@@ -77,7 +104,13 @@ export default function QuestionsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="text-sm text-gray-500 mb-2">#{q.id} · {q.type} · {q.difficulty}</div>
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: q.contentHtml }} />
+                    <div 
+                      className="prose max-w-none" 
+                      dangerouslySetInnerHTML={{ __html: q.contentHtml }}
+                      style={{
+                        lineHeight: '1.6',
+                      }}
+                    />
                     {q.answerHtml && (
                       <details className="mt-2">
                         <summary className="cursor-pointer text-blue-600">查看解析</summary>
@@ -85,9 +118,21 @@ export default function QuestionsPage() {
                       </details>
                     )}
                   </div>
-                  {q.docxPath && (
-                    <a href={`/editor/doc/${q.id}`} className="px-3 py-2 border rounded whitespace-nowrap">在线编辑</a>
-                  )}
+                  <div className="flex gap-2">
+                    <a 
+                      href={`/questions/edit/${q.id}`} 
+                      className="px-3 py-2 bg-blue-600 text-white rounded whitespace-nowrap hover:bg-blue-700"
+                    >
+                      编辑
+                    </a>
+                    <button
+                      onClick={() => handleDelete(q.id)}
+                      disabled={deleting[q.id]}
+                      className="px-3 py-2 bg-red-600 text-white rounded whitespace-nowrap hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deleting[q.id] ? '删除中...' : '删除'}
+                    </button>
+                  </div>
                 </div>
               </li>
             );

@@ -21,13 +21,28 @@ export async function POST(req: NextRequest) {
     const source = (form.get('source') as string) || undefined;
     const answerHtml = (form.get('answerHtml') as string) || undefined;
 
-    if (!(file instanceof File)) return NextResponse.json({ error: '缺少图片' }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: '缺少图片' }, { status: 400 });
+    }
+
+    // 在 Next.js API 路由中，formData.get('file') 返回 File 对象
+    const fileObj = file as any;
+    
+    if (!fileObj || typeof fileObj.arrayBuffer !== 'function') {
+      return NextResponse.json({ error: '无效的文件对象' }, { status: 400 });
+    }
+
+    // 检查是否为图片文件
+    const fileType = fileObj.type || '';
+    if (!fileType.startsWith('image/')) {
+      return NextResponse.json({ error: '仅支持图片文件' }, { status: 400 });
+    }
 
     const uploadDir = await ensureUploadDir();
     const name = `pic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const ext = (file as File).type?.split('/')?.[1] || 'png';
+    const ext = fileType.split('/')[1] || 'png';
     const fp = path.join(uploadDir, `${name}.${ext}`);
-    const buf = Buffer.from(await (file as File).arrayBuffer());
+    const buf = Buffer.from(await fileObj.arrayBuffer());
     await fs.writeFile(fp, buf);
 
     const url = `/uploads/${name}.${ext}`;
@@ -39,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id: created.id, url });
   } catch (e: any) {
+    console.error('图片上传失败:', e);
     return NextResponse.json({ error: e?.message || '上传失败' }, { status: 500 });
   }
 }
